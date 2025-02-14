@@ -9,12 +9,12 @@ servers:
     host: localhost:8080
     pathname: /ws
     protocol: ws
-    description: Local development server
-  prod:
-    host: your-production-domain.com  # Замените на реальный хост
+    description: Local development Server
+  ngrok:
+    host: heron-apt-sunfish.ngrok-free.app
     pathname: /ws
     protocol: wss
-    description: Production server (TLS secured)
+    description: Ngrok Test Production Server
 
 channels:
   room:
@@ -147,7 +147,7 @@ components:
         requestId:
           type: string
           format: uuid
-      additionalProperties: false
+#      additionalProperties: false
 
     baseResponse:
       type: object
@@ -158,4 +158,4 @@ components:
         requestId:
           type: string
           format: uuid
-      additionalProperties: false
+#      additionalProperties: false
