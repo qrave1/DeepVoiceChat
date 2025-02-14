@@ -1,0 +1,161 @@
+asyncapi: 3.0.0
+info:
+  title: Deep Voice Chat
+  version: 1.0.0
+  description: Real-time voice communication service with room management
+
+servers:
+  dev:
+    host: localhost:8080
+    pathname: /ws
+    protocol: ws
+    description: Local development server
+  prod:
+    host: your-production-domain.com  # Замените на реальный хост
+    pathname: /ws
+    protocol: wss
+    description: Production server (TLS secured)
+
+channels:
+  room:
+    address: /room
+    messages:
+      createRoom:
+        $ref: '#/components/messages/createRoom'
+      joinRoom:
+        $ref: '#/components/messages/joinRoom'
+      roomCreated:
+        $ref: '#/components/messages/roomCreated'
+      roomJoined:
+        $ref: '#/components/messages/roomJoined'
+      error:
+        $ref: '#/components/messages/error'
+
+operations:
+  createRoomOperation:
+    action: send
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/createRoom'
+
+  joinRoomOperation:
+    action: send
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/joinRoom'
+
+  roomEventsListener:
+    action: receive
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/roomCreated'
+      - $ref: '#/channels/room/messages/roomJoined'
+      - $ref: '#/channels/room/messages/error'
+
+components:
+  messages:
+    createRoom:
+      name: Create room
+      summary: Request to create new conference room
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/baseRequest'
+          - type: object
+            properties:
+              action:
+                const: createRoom
+            required: [action]
+      tags:
+        - name: Room Management
+
+    joinRoom:
+      name: Join room
+      summary: Request to join existing room
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/baseRequest'
+          - type: object
+            properties:
+              action:
+                const: joinRoom
+              roomId:
+                type: string
+                pattern: '^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$'
+            required: [action, roomId]
+      tags:
+        - name: Room Management
+
+    roomCreated:
+      name: Room created
+      summary: Notification about successful room creation
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/baseResponse'
+          - type: object
+            properties:
+              action:
+                const: roomCreated
+              roomId:
+                type: string
+                pattern: '^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$'
+            required: [action, roomId]
+
+    roomJoined:
+      name: Room joined
+      summary: Notification about successful room join
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/baseResponse'
+          - type: object
+            properties:
+              action:
+                const: roomJoined
+              participants:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+            required: [action, participants]
+
+    error:
+      name: Error response
+      summary: Error notification
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/baseResponse'
+          - type: object
+            properties:
+              action:
+                const: error
+              message:
+                type: string
+                examples:
+                  - "Room not found"
+                  - "Invalid request format"
+            required: [action, message]
+
+  schemas:
+    baseRequest:
+      type: object
+      required: [action, requestId]
+      properties:
+        action:
+          type: string
+        requestId:
+          type: string
+          format: uuid
+      additionalProperties: false
+
+    baseResponse:
+      type: object
+      required: [action, requestId]
+      properties:
+        action:
+          type: string
+        requestId:
+          type: string
+          format: uuid
+      additionalProperties: false
